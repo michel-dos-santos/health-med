@@ -1,0 +1,46 @@
+version: '3.3'
+
+networks:
+  commons-app:
+    driver: bridge
+
+services:
+  postgres-db:
+    image: postgres
+    restart: always
+    container_name: postgres-db
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - commons-app
+  adapter-rest-health-med:
+    build:
+      context: .
+      dockerfile: adapter-rest/Dockerfile
+    restart: always
+    container_name: adapter-rest-health-med
+    environment:
+      - DB_URL=${DB_URL}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - AWS_ACCESS_KEY=${AWS_ACCESS_KEY}
+      - AWS_ACCESS_SECRET=${AWS_ACCESS_SECRET}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_COGNITO_CLIENT_ID=${AWS_COGNITO_CLIENT_ID}
+      - AWS_COGNITO_USER_POOL_ID=${AWS_COGNITO_USER_POOL_ID}
+    ports:
+      - "8010:8010"
+    networks:
+      - commons-app
+    depends_on:
+      - postgres-db
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  data:
+    external: true
